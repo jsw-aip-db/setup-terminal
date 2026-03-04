@@ -114,32 +114,57 @@ if ($starshipInstalled) {
 # ─────────────────────────────────────────────
 Write-Step "Configuring Starship (starship.toml)"
 
-$starshipConfig = Join-Path $env:USERPROFILE ".config\starship.toml"
-$starshipConfigDir = Split-Path $starshipConfig -Parent
+$starshipConfigDir = Join-Path $env:USERPROFILE ".config"
+if (-not (Test-Path $starshipConfigDir)) {
+    New-Item -ItemType Directory -Path $starshipConfigDir -Force | Out-Null
+}
 
+# NF icon U+E683 used in main PS config; U+EBC4 used in cmd config
+$iconPS  = [char]0xE683
+$iconCmd = [char]0xEBC4
+
+$starshipConfig = Join-Path $starshipConfigDir "starship.toml"
 if (Test-Path $starshipConfig) {
     Write-Skip "starship.toml already exists at $starshipConfig"
 } else {
-    if (-not (Test-Path $starshipConfigDir)) {
-        New-Item -ItemType Directory -Path $starshipConfigDir -Force | Out-Null
-    }
-
-    $defaultConfig = @'
+    $defaultConfig = @"
 # Get editor completions based on the config schema
-"$schema" = 'https://starship.rs/config-schema.json'
+"`$schema" = 'https://starship.rs/config-schema.json'
 
 # Inserts a blank line between shell prompts
 add_newline = true
 
-format = ' $all'
+format = '$iconPS `$all'
 
 # Disable the package module, hiding it from the prompt completely
 [package]
 disabled = true
-'@
+"@
 
-    Set-Content -Path $starshipConfig -Value $defaultConfig -Encoding UTF8
+    [System.IO.File]::WriteAllText($starshipConfig, $defaultConfig, [System.Text.Encoding]::UTF8)
     Write-Done "Created default starship.toml at $starshipConfig"
+}
+
+$starshipCmdConfig = Join-Path $starshipConfigDir "starship.cmd.toml"
+if (Test-Path $starshipCmdConfig) {
+    Write-Skip "starship.cmd.toml already exists at $starshipCmdConfig"
+} else {
+    $defaultCmdConfig = @"
+# Get editor completions based on the config schema
+"`$schema" = 'https://starship.rs/config-schema.json'
+
+# Inserts a blank line between shell prompts
+add_newline = true
+
+format = '$iconCmd `$all'
+
+# Disable the package module, hiding it from the prompt completely
+[package]
+disabled = true
+"@
+
+    [System.IO.File]::WriteAllText($starshipCmdConfig, $defaultCmdConfig, [System.Text.Encoding]::UTF8)
+    Write-Done "Created default starship.cmd.toml at $starshipCmdConfig"
 }
 
 # ─────────────────────────────────────────────
@@ -183,10 +208,12 @@ $clinkDir = Join-Path $env:LOCALAPPDATA "clink"
 if (-not (Test-Path $clinkDir)) { New-Item -ItemType Directory -Path $clinkDir -Force | Out-Null }
 
 $starshipLua = Join-Path $clinkDir "starship.lua"
-$luaContent = @'
--- Load Starship prompt in cmd.exe via Clink
+$cmdConfigPath = (Join-Path $env:USERPROFILE ".config\starship.cmd.toml") -replace '\\', '/'
+$luaContent = @"
+-- Load Starship prompt in cmd.exe via Clink (uses cmd-specific config)
+os.setenv('STARSHIP_CONFIG', '$cmdConfigPath')
 load(io.popen('starship init cmd'):read("*a"))()
-'@
+"@
 
 if (Test-Path $starshipLua) {
     $existing = Get-Content $starshipLua -Raw
