@@ -8,10 +8,11 @@ A PowerShell script that sets up a **Starship**-powered terminal environment on 
 |------|--------|
 | 1 | Installs **Cascadia Code NF** (Nerd Font) for the current user |
 | 2 | Installs **Starship** prompt via `winget` |
-| 3 | Configures the **PowerShell profile** to initialize Starship |
-| 4 | Installs **Clink** via `winget` (enables Starship in cmd.exe) |
-| 5 | Configures **Clink** to load Starship at cmd.exe startup |
-| 6 | Sets **CaskaydiaCove Nerd Font** as the default font in Windows Terminal |
+| 3 | Writes a default **starship.toml** config (if none exists) |
+| 4 | Configures the **PowerShell profile** to initialize Starship |
+| 5 | Installs **Clink** via `winget` (enables Starship in cmd.exe) |
+| 6 | Configures **Clink** to load Starship at cmd.exe startup |
+| 7 | Sets **CaskaydiaCove Nerd Font** as the default font in Windows Terminal |
 
 ## Requirements
 

@@ -8,6 +8,7 @@
     - Installs Starship prompt via winget
     - Configures the PowerShell profile to initialize Starship
     - Installs Clink via winget (enables Starship in cmd.exe)
+    - Writes a default starship.toml config (if none exists)
     - Configures Clink to load Starship on cmd.exe startup
     - Sets CaskaydiaCove Nerd Font as the default font in Windows Terminal
 
@@ -109,7 +110,40 @@ if ($starshipInstalled) {
 }
 
 # ─────────────────────────────────────────────
-# 4. Configure PowerShell profile
+# 4. Write default Starship config (if none exists)
+# ─────────────────────────────────────────────
+Write-Step "Configuring Starship (starship.toml)"
+
+$starshipConfig = Join-Path $env:USERPROFILE ".config\starship.toml"
+$starshipConfigDir = Split-Path $starshipConfig -Parent
+
+if (Test-Path $starshipConfig) {
+    Write-Skip "starship.toml already exists at $starshipConfig"
+} else {
+    if (-not (Test-Path $starshipConfigDir)) {
+        New-Item -ItemType Directory -Path $starshipConfigDir -Force | Out-Null
+    }
+
+    $defaultConfig = @'
+# Get editor completions based on the config schema
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Inserts a blank line between shell prompts
+add_newline = true
+
+format = ' $all'
+
+# Disable the package module, hiding it from the prompt completely
+[package]
+disabled = true
+'@
+
+    Set-Content -Path $starshipConfig -Value $defaultConfig -Encoding UTF8
+    Write-Done "Created default starship.toml at $starshipConfig"
+}
+
+# ─────────────────────────────────────────────
+# 5. Configure PowerShell profile
 # ─────────────────────────────────────────────
 Write-Step "Configuring PowerShell profile"
 
@@ -128,7 +162,7 @@ if ($profileContent -match [regex]::Escape($initLine)) {
 }
 
 # ─────────────────────────────────────────────
-# 5. Install Clink via winget
+# 6. Install Clink via winget
 # ─────────────────────────────────────────────
 Write-Step "Installing Clink (for Starship in cmd.exe)"
 
@@ -141,7 +175,7 @@ if ($clinkExe) {
 }
 
 # ─────────────────────────────────────────────
-# 6. Configure Clink to load Starship
+# 7. Configure Clink to load Starship
 # ─────────────────────────────────────────────
 Write-Step "Configuring Clink to use Starship"
 
@@ -168,7 +202,7 @@ if (Test-Path $starshipLua) {
 }
 
 # ─────────────────────────────────────────────
-# 7. Set CaskaydiaCove Nerd Font in Windows Terminal
+# 8. Set CaskaydiaCove Nerd Font in Windows Terminal
 # ─────────────────────────────────────────────
 Write-Step "Updating Windows Terminal default font"
 
